@@ -1,0 +1,8 @@
+.DS_Store
+node_modules/
+dist/
+coverage/
+*.log
+backend/tmp/
+frontend/.vite/
+frontend/responsive-*.png

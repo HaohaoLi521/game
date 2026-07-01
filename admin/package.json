@@ -1,0 +1,21 @@
+{
+  "name": "this-is-pun-admin",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0 --port 5174",
+    "build": "vite build",
+    "preview": "vite preview --host 0.0.0.0 --port 4174"
+  },
+  "dependencies": {
+    "@vitejs/plugin-vue": "^6.0.1",
+    "axios": "^1.13.2",
+    "vue": "^3.5.25"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "vite": "^7.3.6",
+    "vue-tsc": "^3.1.8"
+  }
+}
