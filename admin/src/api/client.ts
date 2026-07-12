@@ -16,3 +16,15 @@ api.interceptors.request.use((config) => {
   }
   return config;
 });
+
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    const url = error.config?.url || "";
+    const isAuthRequest = url.includes("/admin/auth/login") || url.includes("/admin/auth/register");
+    if (error.response?.status === 401 && !isAuthRequest) {
+      window.dispatchEvent(new Event("this-is-pun-admin-session-expired"));
+    }
+    return Promise.reject(error);
+  }
+);

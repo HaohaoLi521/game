@@ -295,7 +295,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from "vue";
+import { computed, onMounted, onUnmounted, reactive, ref } from "vue";
 import {
   approveSubmission,
   createPuzzle,
@@ -359,9 +359,14 @@ const statusCounts = computed(() => {
 });
 
 onMounted(() => {
+  window.addEventListener("this-is-pun-admin-session-expired", handleSessionExpired);
   if (token.value) {
     refreshData();
   }
+});
+
+onUnmounted(() => {
+  window.removeEventListener("this-is-pun-admin-session-expired", handleSessionExpired);
 });
 
 async function submitAuth() {
@@ -411,7 +416,9 @@ async function refreshData() {
     }
     reviewNote.value = "";
   } catch (err) {
-    logout();
+    if (token.value) {
+      error.value = err instanceof Error ? err.message : "加载后台数据失败";
+    }
   }
 }
 
@@ -611,5 +618,10 @@ function clearAdminSession() {
   puzzles.value = [];
   selected.value = null;
   selectedPuzzle.value = null;
+}
+
+function handleSessionExpired() {
+  clearAdminSession();
+  error.value = "登录会话已失效，请重新登录";
 }
 </script>
