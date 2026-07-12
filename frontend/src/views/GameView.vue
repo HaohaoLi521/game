@@ -153,14 +153,15 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, onMounted, ref, watch } from "vue";
-import { useRouter } from "vue-router";
+import { computed, nextTick, ref, watch } from "vue";
+import { useRoute, useRouter } from "vue-router";
 import { gsap } from "gsap";
 import type { CandidateChar } from "../api/puzzles";
 import { useGameStore } from "../stores/game";
 
 const store = useGameStore();
 const router = useRouter();
+const route = useRoute();
 const answerPanel = ref<HTMLElement | null>(null);
 const wrongAnimating = ref(false);
 const suppressClick = ref(false);
@@ -176,9 +177,14 @@ const manualAnswer = computed({
   set: (value: string) => store.setManualAnswer(value)
 });
 
-onMounted(() => {
-  store.bootstrap();
-});
+watch(
+  () => route.query.set,
+  (set) => {
+    const setId = typeof set === "string" ? Number(set) : NaN;
+    void store.bootstrap(Number.isInteger(setId) && setId > 0 ? setId : undefined);
+  },
+  { immediate: true }
+);
 
 watch(
   () => store.wrongTick,

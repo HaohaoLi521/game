@@ -320,6 +320,13 @@ func (s *GameService) AdminSession(token string) (model.AdminSession, bool) {
 	return session, true
 }
 
+func (s *GameService) LogoutAdmin(token string) error {
+	if strings.TrimSpace(token) == "" {
+		return ErrUnauthorized
+	}
+	return s.repo.DeleteAdminSession(token)
+}
+
 func (s *GameService) CreateSubmission(input SubmissionInput) (model.PuzzleSubmission, error) {
 	puzzle, err := s.preparePuzzle(input.PuzzleInput)
 	if err != nil {

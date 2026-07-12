@@ -303,6 +303,7 @@ import {
   listPuzzles,
   listSubmissions,
   loginAdmin,
+  logoutAdmin,
   registerAdmin,
   rejectSubmission,
   updatePuzzle
@@ -589,7 +590,18 @@ function parseCandidates(value: string): CandidateChar[] {
     .filter((candidate) => candidate.char);
 }
 
-function logout() {
+async function logout() {
+  if (token.value) {
+    try {
+      await logoutAdmin();
+    } catch {
+      // Local logout still wins if the server session is already gone.
+    }
+  }
+  clearAdminSession();
+}
+
+function clearAdminSession() {
   token.value = "";
   username.value = "";
   localStorage.removeItem("this-is-pun-admin-token");

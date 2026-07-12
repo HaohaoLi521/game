@@ -146,9 +146,17 @@ func (h *PuzzleHandler) LoginAdmin(c *gin.Context) {
 	response.OK(c, result)
 }
 
+func (h *PuzzleHandler) LogoutAdmin(c *gin.Context) {
+	if err := h.game.LogoutAdmin(adminBearerToken(c)); err != nil {
+		handleError(c, err)
+		return
+	}
+	response.OK(c, gin.H{"logged_out": true})
+}
+
 func (h *PuzzleHandler) RequireAdmin() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		token := strings.TrimSpace(strings.TrimPrefix(c.GetHeader("Authorization"), "Bearer "))
+		token := adminBearerToken(c)
 		if token == "" {
 			response.Error(c, http.StatusUnauthorized, "unauthorized")
 			c.Abort()
@@ -277,6 +285,10 @@ func (h *PuzzleHandler) GetExplanation(c *gin.Context) {
 		return
 	}
 	response.OK(c, explanation)
+}
+
+func adminBearerToken(c *gin.Context) string {
+	return strings.TrimSpace(strings.TrimPrefix(c.GetHeader("Authorization"), "Bearer "))
 }
 
 func parseID(c *gin.Context, key string) (int64, bool) {

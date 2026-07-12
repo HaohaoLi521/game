@@ -93,15 +93,33 @@ export const useGameStore = defineStore("game", {
   },
 
   actions: {
-    async bootstrap() {
-      if (this.currentPuzzle) return;
+    async loadSets() {
+      if (this.sets.length) return;
       this.loading = true;
       this.error = "";
       try {
         this.sets = await getPuzzleSets();
-        const firstSet = this.sets[0];
-        if (!firstSet) throw new Error("暂无题库");
-        this.puzzles = await getPuzzlesBySet(firstSet.id);
+      } catch (error) {
+        this.error = error instanceof Error ? error.message : "加载题库失败";
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    async bootstrap(setId?: number) {
+      this.loading = true;
+      this.error = "";
+      try {
+        if (!this.sets.length) {
+          this.sets = await getPuzzleSets();
+        }
+        const selectedSet = this.sets.find((set) => set.id === setId)
+          ?? this.sets.find((set) => set.id === this.currentPuzzle?.puzzle_set_id)
+          ?? this.sets[0];
+        if (!selectedSet) throw new Error("暂无题库");
+        if (this.currentPuzzle?.puzzle_set_id === selectedSet.id && this.puzzles.length) return;
+
+        this.puzzles = await getPuzzlesBySet(selectedSet.id);
         if (!this.puzzles.length) throw new Error("题库里还没有题目");
         await this.loadPuzzleByIndex(0);
       } catch (error) {

@@ -19,8 +19,8 @@
       <p class="logo-subtitle">XIE YIN GAME</p>
 
       <nav class="home-menu">
-        <RouterLink class="menu-button" to="/game">开始游戏</RouterLink>
-        <RouterLink class="menu-button" to="/game">选择题目</RouterLink>
+        <RouterLink class="menu-button" to="/puzzles">开始游戏</RouterLink>
+        <RouterLink class="menu-button" to="/puzzles">选择题目</RouterLink>
         <RouterLink class="menu-button" to="/submit">我要出题</RouterLink>
         <button class="menu-button" type="button" @click="toast = '多人模式会在 M4 接入'">多人游戏</button>
       </nav>
@@ -28,7 +28,7 @@
 
     <img class="shoe-hero" :src="shoeUrl" alt="粉色卡通鞋" />
 
-    <RouterLink class="question-card" to="/game" aria-label="进入题库">
+    <RouterLink class="question-card" to="/puzzles" aria-label="进入题库">
       <img :src="birdUrl" alt="" />
       <span>题库</span>
     </RouterLink>

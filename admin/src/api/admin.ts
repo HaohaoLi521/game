@@ -16,6 +16,10 @@ export async function loginAdmin(username: string, password: string) {
   return res.data.data;
 }
 
+export async function logoutAdmin() {
+  const res = await api.post<ApiResponse<{ logged_out: boolean }>>("/admin/auth/logout");
+  return res.data.data;
+}
 export async function listSubmissions(status: SubmissionStatus | "") {
   const res = await api.get<ApiResponse<PuzzleSubmission[]>>("/admin/submissions", {
     params: status ? { status } : undefined

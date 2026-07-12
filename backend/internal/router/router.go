@@ -22,6 +22,7 @@ func New(game *service.GameService) *gin.Engine {
 		api.GET("/puzzle-sets/:id", h.GetPuzzleSet)
 		api.GET("/puzzle-sets/:id/puzzles", h.ListPuzzlesBySet)
 		api.GET("/puzzles/:id", h.GetPuzzle)
+		api.GET("/puzzles/:id/explanation", h.GetExplanation)
 		api.POST("/puzzles/:id/check", h.CheckAnswer)
 		api.POST("/puzzles/:id/hint", h.GetHint)
 		api.POST("/submissions", h.CreateSubmission)
@@ -33,6 +34,7 @@ func New(game *service.GameService) *gin.Engine {
 
 			secured := admin.Group("")
 			secured.Use(h.RequireAdmin())
+			secured.POST("/auth/logout", h.LogoutAdmin)
 			secured.GET("/puzzle-sets", h.ListAdminPuzzleSets)
 			secured.GET("/puzzles", h.ListAdminPuzzles)
 			secured.POST("/puzzles", h.CreateAdminPuzzle)

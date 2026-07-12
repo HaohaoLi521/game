@@ -67,6 +67,20 @@ Authorization: Bearer <admin-token>
 
 返回单个公开题目，并生成一次性的 `attempt_id`。提示和提交答案必须带同一个 `attempt_id`，后端用它记录实际提示次数。
 
+### `GET /puzzles/:id/explanation`
+
+返回题目的答案和解释，适合结果页或答题结束后回看使用。
+
+响应：
+
+```json
+{
+  "data": {
+    "answer": "小鸟依人",
+    "explanation": "小鸟 + 依人，组成成语小鸟依人。"
+  }
+}
+```
 ### `POST /puzzles/:id/check`
 
 请求体：
@@ -198,6 +212,17 @@ Authorization: Bearer <admin-token>
 
 当前没有后端登出接口；管理端退出登录可先清理本地 token，服务端会在 token 过期后失效。后端登出属于 M1.5。
 
+### `POST /admin/auth/logout`
+
+需要管理员 token。删除当前服务端 session，响应：
+
+```json
+{
+  "data": {
+    "logged_out": true
+  }
+}
+```
 ## Admin Puzzle
 
 以下接口均需要管理员 token。
