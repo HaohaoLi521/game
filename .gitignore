@@ -6,3 +6,4 @@ coverage/
 backend/tmp/
 frontend/.vite/
 frontend/responsive-*.png
+.tmp/
