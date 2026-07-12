@@ -41,6 +41,15 @@ export async function rejectSubmission(id: number, reviewNote: string) {
   return res.data.data;
 }
 
+export async function batchReviewSubmissions(ids: number[], action: "approve" | "reject", reviewNote: string) {
+  const res = await api.post<ApiResponse<PuzzleSubmission[]>>("/admin/submissions/batch-review", {
+    submission_ids: ids,
+    action,
+    review_note: reviewNote
+  });
+  return res.data.data;
+}
+
 export async function listPuzzles() {
   const res = await api.get<ApiResponse<AdminPuzzle[]>>("/admin/puzzles");
   return res.data.data;

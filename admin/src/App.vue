@@ -67,6 +67,11 @@
             <button type="button" :class="{ active: statusFilter === '' }" @click="setFilter('')">全部</button>
           </div>
 
+          <div v-if="statusFilter === 'pending' && submissions.length" class="review-actions">
+            <button class="reject-button" type="button" :disabled="loading" @click="batchReview('reject')">批量拒绝当前待审</button>
+            <button class="approve-button" type="button" :disabled="loading" @click="batchReview('approve')">批量通过当前待审</button>
+          </div>
+
           <div class="submission-list">
             <button
               v-for="submission in submissions"
@@ -297,6 +302,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, reactive, ref } from "vue";
 import {
+	batchReviewSubmissions,
   approveSubmission,
   createPuzzle,
   deletePuzzle,
@@ -436,6 +442,19 @@ async function review(action: "approve" | "reject") {
         ? await approveSubmission(selected.value.id, reviewNote.value)
         : await rejectSubmission(selected.value.id, reviewNote.value);
     selected.value = next;
+    await refreshData();
+  } finally {
+    loading.value = false;
+  }
+}
+
+async function batchReview(action: "approve" | "reject") {
+  const ids = submissions.value.filter((item) => item.status === "pending").map((item) => item.id);
+  if (!ids.length) return;
+  loading.value = true;
+  try {
+    await batchReviewSubmissions(ids, action, reviewNote.value);
+    reviewNote.value = "";
     await refreshData();
   } finally {
     loading.value = false;
