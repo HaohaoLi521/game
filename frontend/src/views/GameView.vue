@@ -13,6 +13,7 @@
     <section v-else-if="store.error && !currentPuzzle" class="loading-panel error-panel">
       <strong>{{ store.error }}</strong>
       <span>请确认后端服务已启动：localhost:8080</span>
+      <button class="primary-button" type="button" @click="retryLoad">重新加载</button>
     </section>
 
     <template v-else-if="currentPuzzle">
@@ -210,6 +211,11 @@ function toEmoji(url: string) {
 
 async function requestHint() {
   await store.requestHint();
+}
+
+function retryLoad() {
+  const setId = typeof route.query.set === "string" ? Number(route.query.set) : NaN;
+  void store.bootstrap(Number.isInteger(setId) && setId > 0 ? setId : undefined);
 }
 
 function isPuzzleSolved(id: number) {

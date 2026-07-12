@@ -109,6 +109,7 @@
       <footer class="submit-actions">
         <p v-if="message" class="submit-message">{{ message }}</p>
         <p v-if="error" class="submit-error">{{ error }}</p>
+        <button v-if="error" class="ghost-button" type="button" :disabled="saving" @click="submit">再试一次</button>
         <button class="secondary-button" type="button" @click="reset">重填</button>
         <button class="primary-button" type="submit" :disabled="saving">{{ saving ? "提交中" : "提交审核" }}</button>
       </footer>
@@ -195,6 +196,9 @@ async function submit() {
 
 function toPayload(): SubmissionInput {
   const modes = supportedModes();
+  if (!form.answer || !form.hint_one_url || !form.hint_two_url) {
+    throw new Error("请填写答案和两组提示图");
+  }
   return {
     creator_name: form.creator_name,
     contact: form.contact,

@@ -215,10 +215,15 @@ export const useGameStore = defineStore("game", {
 
     async requestHint() {
       if (!this.currentPuzzle || this.hintsUsed >= 3) return;
-      const nextLevel = this.hintsUsed + 1;
-      const hint = await getHint(this.currentPuzzle.id, this.currentPuzzle.attempt_id, nextLevel);
-      this.hintsUsed = nextLevel;
-      this.hints.push(hint);
+      this.error = "";
+      try {
+        const nextLevel = this.hintsUsed + 1;
+        const hint = await getHint(this.currentPuzzle.id, this.currentPuzzle.attempt_id, nextLevel);
+        this.hintsUsed = nextLevel;
+        this.hints.push(hint);
+      } catch (error) {
+        this.error = error instanceof Error ? error.message : "获取提示失败";
+      }
     },
 
     async submitAnswer() {
