@@ -36,3 +36,21 @@ func (s *MediaService) Upload(ctx context.Context, ownerID uint64, name, content
 	}
 	return asset, nil
 }
+
+// Open 读取私有 bucket 中的对象，由应用统一对外提供媒体 URL。
+func (s *MediaService) Open(ctx context.Context, key string) (io.Reader, minio.ObjectInfo, error) {
+	key = strings.TrimPrefix(strings.TrimSpace(key), "/")
+	if key == "" || strings.Contains(key, "..") {
+		return nil, minio.ObjectInfo{}, ErrInvalidRequest
+	}
+	object, err := s.client.GetObject(ctx, s.bucket, key, minio.GetObjectOptions{})
+	if err != nil {
+		return nil, minio.ObjectInfo{}, fmt.Errorf("get object: %w", err)
+	}
+	info, err := object.Stat()
+	if err != nil {
+		_ = object.Close()
+		return nil, minio.ObjectInfo{}, fmt.Errorf("stat object: %w", err)
+	}
+	return object, info, nil
+}

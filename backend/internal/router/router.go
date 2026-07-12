@@ -46,6 +46,9 @@ func NewWithPlayer(game *service.GameService, player *handler.PlayerHandler, aut
 				securedPlayers.POST("/media/upload", media.Upload)
 			}
 		}
+		if media != nil {
+			api.GET("/media/*key", media.Download)
+		}
 
 		admin := api.Group("/admin")
 		{

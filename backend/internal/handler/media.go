@@ -2,6 +2,7 @@ package handler
 
 import (
 	"github.com/gin-gonic/gin"
+	"io"
 	"net/http"
 	"strconv"
 	"this-is-pun/backend/internal/service"
@@ -46,4 +47,19 @@ func (h *MediaHandler) Upload(c *gin.Context) {
 		return
 	}
 	response.OK(c, UploadResponse{asset.ID, asset.PublicURL, asset.ContentType, asset.Size})
+}
+
+// Download 通过应用代理读取私有 MinIO 对象。
+func (h *MediaHandler) Download(c *gin.Context) {
+	object, info, err := h.service.Open(c.Request.Context(), c.Param("key"))
+	if err != nil {
+		response.Error(c, http.StatusNotFound, "media not found")
+		return
+	}
+	defer func() {
+		if closer, ok := object.(io.Closer); ok {
+			_ = closer.Close()
+		}
+	}()
+	c.DataFromReader(http.StatusOK, info.Size, info.ContentType, object, nil)
 }
