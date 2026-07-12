@@ -210,7 +210,7 @@ Authorization: Bearer <admin-token>
 
 è¯·æ±‚ä½“åŒæ³¨å†Œæ¥å£ã€‚å“åº”åŒæ³¨å†Œæ¥å£ã€‚
 
-å½“å‰æ²¡æœ‰åç«¯ç™»å‡ºæ¥å£ï¼›ç®¡ç†ç«¯é€€å‡ºç™»å½•å¯å…ˆæ¸…ç†æœ¬åœ° tokenï¼ŒæœåŠ¡ç«¯ä¼šåœ¨ token è¿‡æœŸåå¤±æ•ˆã€‚åç«¯ç™»å‡ºå±äº M1.5ã€‚
+ç®¡ç†ç«¯å¯è°ƒç”¨ä¸‹æ–¹çš„ç™»å‡ºæ¥å£æ’¤é”€å½“å‰æœåŠ¡ç«¯ä¼šè¯ã€‚
 
 ### `POST /admin/auth/logout`
 
@@ -268,3 +268,11 @@ Authorization: Bearer <admin-token>
 - `/progress/*`ï¼šM2 ç”¨æˆ·è¿›åº¦åŒæ­¥ã€‚
 - `/workshop/*`ï¼šM3 åˆ›æ„å·¥åŠã€‚
 - `/rooms/*`ï¼šM4 å¤šäººæˆ¿é—´ã€‚
+
+## Player Account
+
+- POST /players/register£º{ username, password }£¬´´½¨ÕËºÅ²¢·µ»Ø JWT access/refresh token¡£
+- POST /players/login£ºÇëÇóÌåÍ¬×¢²á£¬·µ»Ø JWT access/refresh token¡£
+- GET /players/me/progress£ºĞèÒª Authorization: Bearer <access_token>£¬·µ»ØÒÑÍ¨¹ØÌâÄ¿¼ÇÂ¼¡£
+- PUT /players/me/progress/:id£ºĞèÒªÍæ¼Ò token£¬±£´æÖ¸¶¨ÌâÄ¿µÄÍ¨¹Ø×´Ì¬¡£
+
