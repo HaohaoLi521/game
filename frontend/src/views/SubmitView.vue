@@ -46,6 +46,7 @@
           <label>
             上图
             <input v-model.trim="form.hint_one_url" type="text" placeholder="emoji:🐦 或图片 URL" />
+            <input type="file" accept="image/*" @change="selectFile($event, 'one')" />
           </label>
           <label>
             上图文案
@@ -54,6 +55,7 @@
           <label>
             下图
             <input v-model.trim="form.hint_two_url" type="text" placeholder="emoji:🧍 或图片 URL" />
+            <input type="file" accept="image/*" @change="selectFile($event, 'two')" />
           </label>
           <label>
             下图文案
@@ -120,6 +122,7 @@
 <script setup lang="ts">
 import { reactive, ref } from "vue";
 import { createSubmission, type SubmissionInput } from "../api/submissions";
+import { uploadMedia } from "../api/media";
 import type { AnswerMode, CandidateChar } from "../api/puzzles";
 
 interface SubmitForm {
@@ -144,6 +147,7 @@ interface SubmitForm {
 const saving = ref(false);
 const message = ref("");
 const error = ref("");
+const hintFiles = reactive<{ one: File | null; two: File | null }>({ one: null, two: null });
 const form = reactive<SubmitForm>(emptyForm());
 
 function emptyForm(): SubmitForm {
@@ -182,6 +186,8 @@ async function submit() {
   message.value = "";
   error.value = "";
   try {
+    if (hintFiles.one) form.hint_one_url = (await uploadMedia(hintFiles.one)).url;
+    if (hintFiles.two) form.hint_two_url = (await uploadMedia(hintFiles.two)).url;
     const payload = toPayload();
     const result = await createSubmission(payload);
     message.value = `投稿成功，审核编号 #${result.id}`;
@@ -192,6 +198,10 @@ async function submit() {
   } finally {
     saving.value = false;
   }
+}
+
+function selectFile(event: Event, slot: "one" | "two") {
+  hintFiles[slot] = (event.target as HTMLInputElement).files?.[0] || null;
 }
 
 function toPayload(): SubmissionInput {
