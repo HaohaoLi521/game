@@ -12,6 +12,7 @@ import {
   type Puzzle,
   type PuzzleSet
 } from "../api/puzzles";
+import { useSettingsStore } from "./settings";
 
 const progressKey = "this-is-pun-progress";
 
@@ -137,7 +138,10 @@ export const useGameStore = defineStore("game", {
         const puzzle = await getPuzzle(this.puzzles[index].id);
         this.currentPuzzle = puzzle;
         this.currentIndex = index;
-        this.answerMode = puzzle.default_answer_mode;
+        const preferredMode = useSettingsStore().answerMode;
+        this.answerMode = preferredMode !== "auto" && puzzle.supported_answer_modes.includes(preferredMode)
+          ? preferredMode
+          : puzzle.default_answer_mode;
         this.resetAnswer();
         this.hints = [];
         this.hintsUsed = 0;
@@ -171,6 +175,11 @@ export const useGameStore = defineStore("game", {
 
     clearAnswer() {
       this.resetAnswer();
+    },
+
+    clearProgress() {
+      this.progress = {};
+      localStorage.removeItem(progressKey);
     },
 
     chooseCandidate(candidate: CandidateChar) {

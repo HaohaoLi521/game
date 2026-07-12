@@ -9,7 +9,7 @@
     <span class="music-note note-two">♫</span>
     <span class="music-note note-three">♪</span>
 
-    <button class="icon-button settings-button" type="button" @click="toast = '设置页会在 M2 后补齐'">⚙</button>
+    <RouterLink class="icon-button settings-button" to="/settings" aria-label="设置">⚙</RouterLink>
 
     <section class="home-panel">
       <div class="game-logo" aria-label="这是谐音梗">

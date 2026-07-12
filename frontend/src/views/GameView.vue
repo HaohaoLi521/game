@@ -158,8 +158,10 @@ import { useRoute, useRouter } from "vue-router";
 import { gsap } from "gsap";
 import type { CandidateChar } from "../api/puzzles";
 import { useGameStore } from "../stores/game";
+import { useSettingsStore } from "../stores/settings";
 
 const store = useGameStore();
+const settings = useSettingsStore();
 const router = useRouter();
 const route = useRoute();
 const answerPanel = ref<HTMLElement | null>(null);
@@ -190,6 +192,8 @@ watch(
   () => store.wrongTick,
   async () => {
     if (!answerPanel.value) return;
+    if (settings.vibrationEnabled) navigator.vibrate?.(120);
+    playFeedbackTone(false);
     wrongAnimating.value = true;
     await nextTick();
     gsap.fromTo(answerPanel.value, { x: -10 }, { x: 0, duration: 0.08, repeat: 5, yoyo: true, onComplete: () => (wrongAnimating.value = false) });
@@ -220,8 +224,23 @@ async function jumpToSolvedPuzzle(index: number, puzzleId: number) {
 async function submit() {
   const result = await store.submitAnswer();
   if (result?.correct) {
+    playFeedbackTone(true);
     router.push("/result");
   }
+}
+
+function playFeedbackTone(correct: boolean) {
+  if (!settings.soundEnabled || !window.AudioContext) return;
+  const context = new AudioContext();
+  const oscillator = context.createOscillator();
+  const gain = context.createGain();
+  oscillator.frequency.value = correct ? 660 : 220;
+  gain.gain.setValueAtTime(0.08, context.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, context.currentTime + 0.12);
+  oscillator.connect(gain).connect(context.destination);
+  oscillator.start();
+  oscillator.stop(context.currentTime + 0.12);
+  oscillator.addEventListener("ended", () => void context.close(), { once: true });
 }
 
 function dragCandidate(event: DragEvent, id: string) {
