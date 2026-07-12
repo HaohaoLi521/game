@@ -10,6 +10,7 @@
     <span class="music-note note-three">♪</span>
 
     <RouterLink class="icon-button settings-button" to="/settings" aria-label="设置">⚙</RouterLink>
+    <RouterLink class="home-account" to="/account">账户</RouterLink>
 
     <section class="home-panel">
       <div class="game-logo" aria-label="这是谐音梗">

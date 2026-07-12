@@ -1346,6 +1346,19 @@ a {
   background: linear-gradient(145deg, #dff4fb 0%, #eef9f0 100%);
 }
 
+.home-account {
+  position: absolute;
+  top: 44px;
+  right: 100px;
+  z-index: 3;
+  padding: 10px 14px;
+  border: 2px solid #9acddd;
+  border-radius: 14px;
+  color: #315875;
+  background: rgba(255, 255, 255, 0.82);
+  font-weight: 900;
+}
+
 .select-header,
 .set-grid,
 .select-state {
@@ -1591,6 +1604,15 @@ a {
   width: 22px;
   height: 22px;
   accent-color: #55c174;
+}
+
+.settings-row input:not([type="checkbox"]) {
+  width: min(260px, 48vw);
+  min-height: 42px;
+  padding: 0 12px;
+  border: 2px solid #c4dde8;
+  border-radius: 12px;
+  font: inherit;
 }
 
 .danger-card {

@@ -5,12 +5,18 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"this-is-pun/backend/internal/auth"
 	"this-is-pun/backend/internal/handler"
 	"this-is-pun/backend/internal/service"
 	"this-is-pun/backend/pkg/response"
 )
 
 func New(game *service.GameService) *gin.Engine {
+	return NewWithPlayer(game, nil, nil)
+}
+
+// NewWithPlayer 在保留旧游戏路由的基础上注册玩家账户模块。
+func NewWithPlayer(game *service.GameService, player *handler.PlayerHandler, authManager *auth.AuthManager) *gin.Engine {
 	engine := gin.Default()
 	engine.Use(cors())
 
@@ -26,6 +32,15 @@ func New(game *service.GameService) *gin.Engine {
 		api.POST("/puzzles/:id/check", h.CheckAnswer)
 		api.POST("/puzzles/:id/hint", h.GetHint)
 		api.POST("/submissions", h.CreateSubmission)
+		if player != nil && authManager != nil {
+			players := api.Group("/players")
+			players.POST("/register", player.Register)
+			players.POST("/login", player.Login)
+			securedPlayers := players.Group("")
+			securedPlayers.Use(auth.JWTAuthMiddleware(auth.MiddlewareConfig{AuthManager: authManager}))
+			securedPlayers.GET("/me/progress", player.Progress)
+			securedPlayers.PUT("/me/progress/:id", player.MarkSolved)
+		}
 
 		admin := api.Group("/admin")
 		{

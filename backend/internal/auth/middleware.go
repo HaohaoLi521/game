@@ -97,6 +97,7 @@ func JWTAuthMiddleware(config MiddlewareConfig) gin.HandlerFunc {
 			if config.SuccessCallback != nil {
 				config.SuccessCallback(c, res.Session, res.Claims)
 			}
+			c.Next()
 		}
 
 		//SkipAuth:

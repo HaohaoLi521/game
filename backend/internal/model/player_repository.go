@@ -34,3 +34,16 @@ func (r *PlayerRepository) FindByUsername(ctx context.Context, username string) 
 	}
 	return &player, err
 }
+
+// ListProgress 返回玩家已通关题目的服务端记录。
+func (r *PlayerRepository) ListProgress(ctx context.Context, playerID uint64) ([]entity.PlayerProgress, error) {
+	var progress []entity.PlayerProgress
+	err := r.db.WithContext(ctx).Where("player_id = ?", playerID).Order("puzzle_id").Find(&progress).Error
+	return progress, err
+}
+
+// MarkSolved 以玩家和题目为唯一键写入通关记录。
+func (r *PlayerRepository) MarkSolved(ctx context.Context, playerID uint64, puzzleID int64) error {
+	progress := entity.PlayerProgress{PlayerID: playerID, PuzzleID: puzzleID}
+	return r.db.WithContext(ctx).Where("player_id = ? AND puzzle_id = ?", playerID, puzzleID).FirstOrCreate(&progress).Error
+}

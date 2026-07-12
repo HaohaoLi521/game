@@ -3,8 +3,16 @@ package main
 import (
 	"log"
 	"os"
+	"time"
 
+	"github.com/redis/go-redis/v9"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
+
+	"this-is-pun/backend/internal/auth"
 	"this-is-pun/backend/internal/data"
+	"this-is-pun/backend/internal/handler"
+	"this-is-pun/backend/internal/model"
 	"this-is-pun/backend/internal/router"
 	"this-is-pun/backend/internal/service"
 )
@@ -33,7 +41,28 @@ func main() {
 		log.Printf("DATABASE_URL not set, using in-memory seed data")
 	}
 	gameService := service.NewGameService(repo)
-	engine := router.New(gameService)
+	var playerHandler *handler.PlayerHandler
+	var authManager *auth.AuthManager
+	if databaseURL != "" && os.Getenv("REDIS_ADDR") != "" {
+		gormDB, err := gorm.Open(postgres.Open(databaseURL), &gorm.Config{})
+		if err != nil {
+			log.Printf("player database unavailable: %v", err)
+		} else {
+			playerRepo, err := model.NewPlayerRepository(gormDB)
+			if err != nil {
+				log.Printf("player migration failed: %v", err)
+			} else {
+				redisClient := redis.NewClient(&redis.Options{Addr: os.Getenv("REDIS_ADDR")})
+				secret := os.Getenv("JWT_SECRET")
+				if secret == "" {
+					secret = "development-only-change-me"
+				}
+				authManager = auth.NewAuthManager(redisClient, auth.JWTConfig{Secret: secret, AppID: "this-is-pun", DomainName: "player", AccessTokenExpire: 72 * time.Hour, RefreshTokenExpire: 72 * time.Hour}, auth.SSOConfig{SessionExpireTime: 72})
+				playerHandler = handler.NewPlayerHandler(service.NewPlayerService(playerRepo, authManager))
+			}
+		}
+	}
+	engine := router.NewWithPlayer(gameService, playerHandler, authManager)
 
 	log.Printf("this-is-pun backend listening on :%s", port)
 	if err := engine.Run(":" + port); err != nil {

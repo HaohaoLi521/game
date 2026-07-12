@@ -160,9 +160,11 @@ import { gsap } from "gsap";
 import type { CandidateChar } from "../api/puzzles";
 import { useGameStore } from "../stores/game";
 import { useSettingsStore } from "../stores/settings";
+import { usePlayerStore } from "../stores/player";
 
 const store = useGameStore();
 const settings = useSettingsStore();
+const player = usePlayerStore();
 const router = useRouter();
 const route = useRoute();
 const answerPanel = ref<HTMLElement | null>(null);
@@ -187,6 +189,12 @@ watch(
     void store.bootstrap(Number.isInteger(setId) && setId > 0 ? setId : undefined);
   },
   { immediate: true }
+);
+
+watch(
+  () => player.progress,
+  (progress) => Object.assign(store.progress, progress),
+  { deep: true, immediate: true }
 );
 
 watch(
@@ -230,6 +238,7 @@ async function jumpToSolvedPuzzle(index: number, puzzleId: number) {
 async function submit() {
   const result = await store.submitAnswer();
   if (result?.correct) {
+    await player.markSolved(store.currentPuzzle?.id || 0);
     playFeedbackTone(true);
     router.push("/result");
   }

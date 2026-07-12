@@ -4,6 +4,7 @@ import GameView from "../views/GameView.vue";
 import PuzzleSelectView from "../views/PuzzleSelectView.vue";
 import ResultView from "../views/ResultView.vue";
 import SettingsView from "../views/SettingsView.vue";
+import AccountView from "../views/AccountView.vue";
 import SubmitView from "../views/SubmitView.vue";
 
 const router = createRouter({
@@ -11,6 +12,7 @@ const router = createRouter({
   routes: [
     { path: "/", name: "home", component: HomeView },
     { path: "/settings", name: "settings", component: SettingsView },
+    { path: "/account", name: "account", component: AccountView },
     { path: "/puzzles", name: "puzzles", component: PuzzleSelectView },
     { path: "/game", name: "game", component: GameView },
     { path: "/result", name: "result", component: ResultView },
