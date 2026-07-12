@@ -6,6 +6,7 @@ import ResultView from "../views/ResultView.vue";
 import SettingsView from "../views/SettingsView.vue";
 import AccountView from "../views/AccountView.vue";
 import SubmitView from "../views/SubmitView.vue";
+import MySubmissionsView from "../views/MySubmissionsView.vue";
 
 const router = createRouter({
   history: createWebHistory(),
@@ -16,7 +17,8 @@ const router = createRouter({
     { path: "/puzzles", name: "puzzles", component: PuzzleSelectView },
     { path: "/game", name: "game", component: GameView },
     { path: "/result", name: "result", component: ResultView },
-    { path: "/submit", name: "submit", component: SubmitView }
+    { path: "/submit", name: "submit", component: SubmitView },
+    { path: "/my-submissions", name: "my-submissions", component: MySubmissionsView }
   ]
 });
 

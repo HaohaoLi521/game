@@ -121,9 +121,10 @@
 
 <script setup lang="ts">
 import { reactive, ref } from "vue";
-import { createSubmission, type SubmissionInput } from "../api/submissions";
+import { createPlayerSubmission, createSubmission, type SubmissionInput } from "../api/submissions";
 import { uploadMedia } from "../api/media";
 import type { AnswerMode, CandidateChar } from "../api/puzzles";
+import { usePlayerStore } from "../stores/player";
 
 interface SubmitForm {
   creator_name: string;
@@ -147,6 +148,7 @@ interface SubmitForm {
 const saving = ref(false);
 const message = ref("");
 const error = ref("");
+const player = usePlayerStore();
 const hintFiles = reactive<{ one: File | null; two: File | null }>({ one: null, two: null });
 const form = reactive<SubmitForm>(emptyForm());
 
@@ -189,7 +191,7 @@ async function submit() {
     if (hintFiles.one) form.hint_one_url = (await uploadMedia(hintFiles.one)).url;
     if (hintFiles.two) form.hint_two_url = (await uploadMedia(hintFiles.two)).url;
     const payload = toPayload();
-    const result = await createSubmission(payload);
+    const result = player.loggedIn ? await createPlayerSubmission(payload) : await createSubmission(payload);
     message.value = `投稿成功，审核编号 #${result.id}`;
     reset();
     message.value = `投稿成功，审核编号 #${result.id}`;

@@ -47,6 +47,7 @@ func main() {
 	var playerHandler *handler.PlayerHandler
 	var authManager *auth.AuthManager
 	var mediaHandler *handler.MediaHandler
+	var playerSubmissionHandler *handler.PlayerSubmissionHandler
 	if databaseURL != "" && os.Getenv("REDIS_ADDR") != "" {
 		gormDB, err := gorm.Open(postgres.Open(databaseURL), &gorm.Config{})
 		if err != nil {
@@ -56,6 +57,12 @@ func main() {
 			if err != nil {
 				log.Printf("player migration failed: %v", err)
 			} else {
+				playerSubmissionRepo, migrationErr := model.NewPlayerSubmissionRepository(gormDB)
+				if migrationErr != nil {
+					log.Printf("player submission migration failed: %v", migrationErr)
+				} else {
+					playerSubmissionHandler = handler.NewPlayerSubmissionHandler(service.NewPlayerSubmissionService(playerSubmissionRepo, gameService))
+				}
 				redisClient := redis.NewClient(&redis.Options{Addr: os.Getenv("REDIS_ADDR")})
 				secret := os.Getenv("JWT_SECRET")
 				if secret == "" {
@@ -82,7 +89,7 @@ func main() {
 			}
 		}
 	}
-	engine := router.NewWithPlayer(gameService, playerHandler, authManager, mediaHandler)
+	engine := router.NewWithPlayer(gameService, playerHandler, authManager, mediaHandler, playerSubmissionHandler)
 
 	log.Printf("this-is-pun backend listening on :%s", port)
 	if err := engine.Run(":" + port); err != nil {

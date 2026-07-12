@@ -12,6 +12,7 @@
     <RouterLink class="icon-button settings-button" to="/settings" aria-label="设置">⚙</RouterLink>
     <RouterLink class="home-account" to="/account">账户</RouterLink>
 
+    <RouterLink class="home-account" style="right: 20px" to="/my-submissions">投稿</RouterLink>
     <section class="home-panel">
       <div class="game-logo" aria-label="这是谐音梗">
         <span>这是</span>

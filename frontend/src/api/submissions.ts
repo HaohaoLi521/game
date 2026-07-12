@@ -26,11 +26,24 @@ export interface PuzzleSubmission {
   creator_name: string;
   contact: string;
   status: "pending" | "approved" | "rejected";
+  review_note: string;
   answer: string;
+  category: string;
+  difficulty: number;
   created_at: string;
 }
 
 export async function createSubmission(payload: SubmissionInput) {
   const res = await api.post<ApiResponse<PuzzleSubmission>>("/submissions", payload);
+  return res.data.data;
+}
+
+export async function createPlayerSubmission(payload: SubmissionInput) {
+  const res = await api.post<ApiResponse<PuzzleSubmission>>("/players/submissions", payload);
+  return res.data.data;
+}
+
+export async function listPlayerSubmissions() {
+  const res = await api.get<ApiResponse<PuzzleSubmission[]>>("/players/submissions");
   return res.data.data;
 }
