@@ -52,6 +52,14 @@ func (s *PlayerService) Login(ctx context.Context, username, password, ip, agent
 	return token, p, err
 }
 
+// Refresh 轮换玩家会话的 access token 与 refresh token。
+func (s *PlayerService) Refresh(refreshToken, ip, agent string) (*auth.LoginResult, error) {
+	return s.auth.RefreshToken(refreshToken, ip, agent, nil)
+}
+
+// Logout 撤销当前 access token 对应的 Redis 会话。
+func (s *PlayerService) Logout(accessToken string) error { return s.auth.Logout(accessToken, "") }
+
 // Progress 读取玩家已通关题目。
 func (s *PlayerService) Progress(ctx context.Context, playerID uint64) ([]entity.PlayerProgress, error) {
 	return s.repo.ListProgress(ctx, playerID)

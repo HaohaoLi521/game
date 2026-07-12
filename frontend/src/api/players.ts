@@ -6,3 +6,4 @@ export async function registerPlayer(username: string, password: string) { retur
 export async function loginPlayer(username: string, password: string) { return (await api.post<ApiResponse<PlayerAuth>>("/players/login", { username, password })).data.data; }
 export async function getPlayerProgress() { return (await api.get<ApiResponse<PlayerProgress[]>>("/players/me/progress")).data.data; }
 export async function savePlayerProgress(puzzleId: number) { return (await api.put<ApiResponse<{ saved: boolean }>>(`/players/me/progress/${puzzleId}`)).data.data; }
+export async function logoutPlayer() { return (await api.post<ApiResponse<{ logged_out: boolean }>>("/players/logout")).data.data; }

@@ -36,10 +36,12 @@ func NewWithPlayer(game *service.GameService, player *handler.PlayerHandler, aut
 			players := api.Group("/players")
 			players.POST("/register", player.Register)
 			players.POST("/login", player.Login)
+			players.POST("/refresh", player.Refresh)
 			securedPlayers := players.Group("")
 			securedPlayers.Use(auth.JWTAuthMiddleware(auth.MiddlewareConfig{AuthManager: authManager}))
 			securedPlayers.GET("/me/progress", player.Progress)
 			securedPlayers.PUT("/me/progress/:id", player.MarkSolved)
+			securedPlayers.POST("/logout", player.Logout)
 		}
 
 		admin := api.Group("/admin")

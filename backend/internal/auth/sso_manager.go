@@ -180,16 +180,14 @@ func (m *SSOManager) CreateSession(session *Session) error {
 		pipe.Set(m.ctx, sessionTokenKey, session.TokenHash, expiration)
 	}
 
-	// 如果有刷新Token，建立映射
-	//if session.RefreshToken != "" {
-	//	refreshTokenKey := SSORefreshTokenPrefix + session.RefreshToken
-	//	pipe.Set(m.ctx, refreshTokenKey, session.SessionID, expiration)
-	//
-	//	// 添加到用户刷新Token集合
-	//	userRefreshKey := SSOUserRefreshPrefix + session.UserID
-	//	pipe.SAdd(m.ctx, userRefreshKey, session.RefreshToken)
-	//	pipe.Expire(m.ctx, userRefreshKey, expiration)
-	//}
+	// 刷新 token 必须在创建会话时建立索引，否则无法完成 token 轮换。
+	if session.RefreshToken != "" {
+		refreshTokenKey := SSORefreshTokenPrefix + session.RefreshToken
+		pipe.Set(m.ctx, refreshTokenKey, session.SessionID, expiration)
+		userRefreshKey := SSOUserRefreshPrefix + session.UserID
+		pipe.SAdd(m.ctx, userRefreshKey, session.RefreshToken)
+		pipe.Expire(m.ctx, userRefreshKey, expiration)
+	}
 
 	// 6. 执行批量操作
 	_, err = pipe.Exec(m.ctx)

@@ -27,9 +27,32 @@ type PlayerAuthResponse struct {
 	PlayerID     uint64 `json:"player_id"`
 	Username     string `json:"username"`
 }
+type PlayerRefreshRequest struct {
+	RefreshToken string `json:"refresh_token"`
+}
 
 func (h *PlayerHandler) Register(c *gin.Context) { h.auth(c, true) }
 func (h *PlayerHandler) Login(c *gin.Context)    { h.auth(c, false) }
+func (h *PlayerHandler) Refresh(c *gin.Context) {
+	var req PlayerRefreshRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Error(c, http.StatusBadRequest, "invalid request body")
+		return
+	}
+	token, err := h.service.Refresh(req.RefreshToken, c.ClientIP(), c.GetHeader("User-Agent"))
+	if err != nil {
+		response.Error(c, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+	response.OK(c, gin.H{"access_token": token.AccessToken, "refresh_token": token.RefreshToken, "expires_in": token.ExpiresIn})
+}
+func (h *PlayerHandler) Logout(c *gin.Context) {
+	if err := h.service.Logout(playerBearerToken(c)); err != nil {
+		handleError(c, err)
+		return
+	}
+	response.OK(c, gin.H{"logged_out": true})
+}
 func (h *PlayerHandler) auth(c *gin.Context, register bool) {
 	var req PlayerAuthRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -101,4 +124,11 @@ func (h *PlayerHandler) MarkSolved(c *gin.Context) {
 		return
 	}
 	response.OK(c, gin.H{"saved": true})
+}
+func playerBearerToken(c *gin.Context) string {
+	token := c.GetHeader("Authorization")
+	if len(token) > 7 && token[:7] == "Bearer " {
+		return token[7:]
+	}
+	return token
 }
