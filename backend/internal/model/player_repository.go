@@ -3,6 +3,7 @@ package model
 import (
 	"context"
 	"errors"
+	"time"
 
 	"gorm.io/gorm"
 
@@ -44,6 +45,6 @@ func (r *PlayerRepository) ListProgress(ctx context.Context, playerID uint64) ([
 
 // MarkSolved 以玩家和题目为唯一键写入通关记录。
 func (r *PlayerRepository) MarkSolved(ctx context.Context, playerID uint64, puzzleID int64) error {
-	progress := entity.PlayerProgress{PlayerID: playerID, PuzzleID: puzzleID}
+	progress := entity.PlayerProgress{PlayerID: playerID, PuzzleID: puzzleID, SolvedAt: time.Now().UTC()}
 	return r.db.WithContext(ctx).Where("player_id = ? AND puzzle_id = ?", playerID, puzzleID).FirstOrCreate(&progress).Error
 }
