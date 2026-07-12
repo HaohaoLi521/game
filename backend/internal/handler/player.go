@@ -3,6 +3,7 @@ package handler
 import (
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"this-is-pun/backend/internal/service"
@@ -29,6 +30,12 @@ type PlayerAuthResponse struct {
 }
 type PlayerRefreshRequest struct {
 	RefreshToken string `json:"refresh_token"`
+}
+
+// PlayerProgressResponse 是玩家进度响应 DTO，不暴露数据库实体。
+type PlayerProgressResponse struct {
+	PuzzleID int64  `json:"puzzle_id"`
+	SolvedAt string `json:"solved_at"`
 }
 
 func (h *PlayerHandler) Register(c *gin.Context) { h.auth(c, true) }
@@ -107,7 +114,11 @@ func (h *PlayerHandler) Progress(c *gin.Context) {
 		handleError(c, err)
 		return
 	}
-	response.OK(c, progress)
+	result := make([]PlayerProgressResponse, 0, len(progress))
+	for _, item := range progress {
+		result = append(result, PlayerProgressResponse{PuzzleID: item.PuzzleID, SolvedAt: item.SolvedAt.UTC().Format(time.RFC3339)})
+	}
+	response.OK(c, result)
 }
 func (h *PlayerHandler) MarkSolved(c *gin.Context) {
 	uid, err := strconv.ParseUint(c.GetString("UserID"), 10, 64)
