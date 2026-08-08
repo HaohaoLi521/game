@@ -50,9 +50,21 @@ func NewWithPlayer(game *service.GameService, player *handler.PlayerHandler, aut
 				securedPlayers.GET("/submissions", submissions.List)
 				securedPlayers.GET("/submissions/:id", submissions.Get)
 			}
+		} else {
+			api.POST("/players/register", unavailable("player"))
+			api.POST("/players/login", unavailable("player"))
+			api.POST("/players/refresh", unavailable("player"))
+			api.GET("/players/me/progress", unavailable("player"))
+			api.PUT("/players/me/progress/:id", unavailable("player"))
+			api.POST("/players/logout", unavailable("player"))
 		}
 		if media != nil {
 			api.GET("/media/*key", media.Download)
+		} else {
+			api.GET("/media/*key", unavailable("media"))
+		}
+		if player != nil && authManager != nil && media == nil {
+			api.POST("/players/media/upload", unavailable("media"))
 		}
 		if workshop != nil {
 			api.GET("/workshop/submissions", workshop.List)
@@ -74,6 +86,9 @@ func NewWithPlayer(game *service.GameService, player *handler.PlayerHandler, aut
 			if archives != nil {
 				secured.GET("/puzzles/archived", archives.ListArchived)
 				secured.POST("/puzzles/:id/restore", archives.Restore)
+			} else {
+				secured.GET("/puzzles/archived", unavailable("puzzle archive"))
+				secured.POST("/puzzles/:id/restore", unavailable("puzzle archive"))
 			}
 			secured.GET("/submissions", h.ListAdminSubmissions)
 			secured.POST("/submissions/:id/approve", h.ApproveSubmission)
@@ -84,7 +99,9 @@ func NewWithPlayer(game *service.GameService, player *handler.PlayerHandler, aut
 		}
 
 		api.Any("/progress/*path", roadmap("progress"))
-		api.Any("/workshop/*path", roadmap("workshop"))
+		if workshop == nil {
+			api.Any("/workshop/*path", unavailable("workshop"))
+		}
 		api.Any("/rooms/*path", roadmap("multiplayer"))
 	}
 
@@ -107,5 +124,11 @@ func cors() gin.HandlerFunc {
 func roadmap(module string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		response.Error(c, http.StatusNotImplemented, module+" module is planned after M1")
+	}
+}
+
+func unavailable(module string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		response.Error(c, http.StatusServiceUnavailable, module+" module is unavailable")
 	}
 }
