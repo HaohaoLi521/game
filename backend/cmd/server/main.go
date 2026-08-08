@@ -49,6 +49,15 @@ func main() {
 	var mediaHandler *handler.MediaHandler
 	var playerSubmissionHandler *handler.PlayerSubmissionHandler
 	adminSubmissionHandler := handler.NewAdminSubmissionHandler(service.NewAdminSubmissionService(gameService))
+	var puzzleArchiveHandler *handler.PuzzleArchiveHandler
+	if databaseURL != "" {
+		archiveDB, err := gorm.Open(postgres.Open(databaseURL), &gorm.Config{})
+		if err != nil {
+			log.Printf("puzzle archive database unavailable: %v", err)
+		} else {
+			puzzleArchiveHandler = handler.NewPuzzleArchiveHandler(service.NewPuzzleArchiveService(model.NewPuzzleArchiveRepository(archiveDB)))
+		}
+	}
 	if databaseURL != "" && os.Getenv("REDIS_ADDR") != "" {
 		gormDB, err := gorm.Open(postgres.Open(databaseURL), &gorm.Config{})
 		if err != nil {
@@ -90,7 +99,7 @@ func main() {
 			}
 		}
 	}
-	engine := router.NewWithPlayer(gameService, playerHandler, authManager, mediaHandler, playerSubmissionHandler, adminSubmissionHandler)
+	engine := router.NewWithPlayer(gameService, playerHandler, authManager, mediaHandler, playerSubmissionHandler, adminSubmissionHandler, puzzleArchiveHandler)
 
 	log.Printf("this-is-pun backend listening on :%s", port)
 	if err := engine.Run(":" + port); err != nil {

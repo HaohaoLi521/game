@@ -12,11 +12,11 @@ import (
 )
 
 func New(game *service.GameService) *gin.Engine {
-	return NewWithPlayer(game, nil, nil, nil, nil, nil)
+	return NewWithPlayer(game, nil, nil, nil, nil, nil, nil)
 }
 
 // NewWithPlayer 在保留旧游戏路由的基础上注册玩家账户模块。
-func NewWithPlayer(game *service.GameService, player *handler.PlayerHandler, authManager *auth.AuthManager, media *handler.MediaHandler, submissions *handler.PlayerSubmissionHandler, adminSubmissions *handler.AdminSubmissionHandler) *gin.Engine {
+func NewWithPlayer(game *service.GameService, player *handler.PlayerHandler, authManager *auth.AuthManager, media *handler.MediaHandler, submissions *handler.PlayerSubmissionHandler, adminSubmissions *handler.AdminSubmissionHandler, archives *handler.PuzzleArchiveHandler) *gin.Engine {
 	engine := gin.Default()
 	engine.Use(cors())
 
@@ -68,6 +68,10 @@ func NewWithPlayer(game *service.GameService, player *handler.PlayerHandler, aut
 			secured.POST("/puzzles", h.CreateAdminPuzzle)
 			secured.PUT("/puzzles/:id", h.UpdateAdminPuzzle)
 			secured.DELETE("/puzzles/:id", h.DeleteAdminPuzzle)
+			if archives != nil {
+				secured.GET("/puzzles/archived", archives.ListArchived)
+				secured.POST("/puzzles/:id/restore", archives.Restore)
+			}
 			secured.GET("/submissions", h.ListAdminSubmissions)
 			secured.POST("/submissions/:id/approve", h.ApproveSubmission)
 			secured.POST("/submissions/:id/reject", h.RejectSubmission)
