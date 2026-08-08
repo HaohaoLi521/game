@@ -28,7 +28,7 @@ export const usePlayerStore = defineStore("player", {
       const guest = readGuestProgress();
       const missing = Object.keys(guest).filter((id) => guest[id] && !this.progress[id] && Number(id) > 0);
       for (const id of missing) { await savePlayerProgress(Number(id)); this.progress[id] = true; }
-      if (missing.length || Object.keys(guest).length === 0) localStorage.removeItem(guestProgressKey);
+      if (Object.keys(guest).length) localStorage.removeItem(guestProgressKey);
     },
     async markSolved(puzzleId: number) { if (!this.token) return; await savePlayerProgress(puzzleId); this.progress[String(puzzleId)] = true; },
     async logout() { try { await logoutPlayer(); } finally { this.token = ""; this.username = ""; this.progress = {}; localStorage.removeItem(tokenKey); localStorage.removeItem(usernameKey); } }
