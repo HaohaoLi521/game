@@ -12,6 +12,11 @@
         <span>{{ result?.explanation || "这题已经成功通关" }}</span>
       </div>
 
+      <div v-if="player.achievements.length" class="answer-reveal">
+        <strong>成就解锁</strong>
+        <span>{{ player.achievements.map((item) => item.title).join(" · ") }}</span>
+      </div>
+
       <dl class="score-row">
         <div>
           <dt>得分</dt>
@@ -35,8 +40,10 @@
 import { computed, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { useGameStore } from "../stores/game";
+import { usePlayerStore } from "../stores/player";
 
 const store = useGameStore();
+const player = usePlayerStore();
 const router = useRouter();
 const result = computed(() => store.lastResult);
 const hasResult = computed(() => Boolean(result.value?.correct));
