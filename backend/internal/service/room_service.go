@@ -15,6 +15,9 @@ import (
 
 const maxRoomPlayers = 8
 
+// ErrDependencyUnavailable 表示 Redis 房间状态存储不可用。
+var ErrDependencyUnavailable = errors.New("room dependency unavailable")
+
 // RoomRepository 是房间服务所需的最小 Redis 仓储端口。
 type RoomRepository interface {
 	Create(context.Context, entity.Room) error
@@ -232,6 +235,9 @@ func (s *RoomService) updatePlayer(ctx context.Context, roomID, playerID string,
 func mapRoomError(err error) error {
 	if errors.Is(err, model.ErrRoomNotFound) {
 		return ErrNotFound
+	}
+	if errors.Is(err, model.ErrRoomUnavailable) {
+		return ErrDependencyUnavailable
 	}
 	return err
 }

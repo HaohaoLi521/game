@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"sync"
 	"time"
@@ -52,7 +53,7 @@ func (h *RoomHandler) Create(c *gin.Context) {
 	}
 	room, err := h.service.Create(c.Request.Context(), service.CreateRoomInput{PlayerID: c.GetString("UserID"), PlayerName: req.PlayerName, PuzzleSetID: req.PuzzleSetID})
 	if err != nil {
-		handleError(c, err)
+		handleRoomError(c, err)
 		return
 	}
 	response.Created(c, room)
@@ -65,7 +66,7 @@ func (h *RoomHandler) Join(c *gin.Context) {
 	}
 	room, err := h.service.Join(c.Request.Context(), service.JoinRoomInput{RoomID: c.Param("id"), PlayerID: c.GetString("UserID"), PlayerName: req.PlayerName})
 	if err != nil {
-		handleError(c, err)
+		handleRoomError(c, err)
 		return
 	}
 	h.broadcast(room.ID, entity.RoomEvent{Type: "player_joined", Room: &room})
@@ -82,7 +83,7 @@ func (h *RoomHandler) WebSocket(c *gin.Context) {
 	}
 	room, err := h.service.Join(c.Request.Context(), service.JoinRoomInput{RoomID: roomID, PlayerID: playerID, PlayerName: playerID})
 	if err != nil {
-		handleError(c, err)
+		handleRoomError(c, err)
 		return
 	}
 	conn, err := roomUpgrader.Upgrade(c.Writer, c.Request, nil)
@@ -92,8 +93,9 @@ func (h *RoomHandler) WebSocket(c *gin.Context) {
 	client := &roomConnection{conn: conn}
 	h.addConnection(roomID, playerID, client)
 	defer func() {
-		h.removeConnection(roomID, playerID, client)
-		_, _ = h.service.Leave(c.Request.Context(), roomID, playerID)
+		if h.removeConnection(roomID, playerID, client) {
+			_, _ = h.service.Leave(c.Request.Context(), roomID, playerID)
+		}
 		_ = conn.Close()
 	}()
 	_ = client.writeJSON(entity.RoomEvent{Type: "room_state", Room: &room})
@@ -105,6 +107,7 @@ func (h *RoomHandler) WebSocket(c *gin.Context) {
 		if readErr != nil {
 			return
 		}
+		_ = conn.SetReadDeadline(time.Now().Add(70 * time.Second))
 		var msg roomMessage
 		if err := json.Unmarshal(data, &msg); err != nil {
 			_ = client.writeJSON(entity.RoomEvent{Type: "error", Payload: "invalid message"})
@@ -173,15 +176,18 @@ func (h *RoomHandler) addConnection(roomID, playerID string, connection *roomCon
 	h.rooms[roomID][playerID] = connection
 }
 
-func (h *RoomHandler) removeConnection(roomID, playerID string, connection *roomConnection) {
+func (h *RoomHandler) removeConnection(roomID, playerID string, connection *roomConnection) bool {
 	h.mu.Lock()
 	defer h.mu.Unlock()
+	removed := false
 	if current := h.rooms[roomID][playerID]; current == connection {
 		delete(h.rooms[roomID], playerID)
+		removed = true
 	}
 	if len(h.rooms[roomID]) == 0 {
 		delete(h.rooms, roomID)
 	}
+	return removed
 }
 
 func (h *RoomHandler) broadcast(roomID string, event entity.RoomEvent) {
@@ -205,4 +211,12 @@ func (c *roomConnection) writeJSON(value any) error {
 
 func errorEvent(err error) entity.RoomEvent {
 	return entity.RoomEvent{Type: "error", Payload: err.Error()}
+}
+
+func handleRoomError(c *gin.Context, err error) {
+	if errors.Is(err, service.ErrDependencyUnavailable) {
+		response.Error(c, http.StatusServiceUnavailable, "multiplayer module unavailable")
+		return
+	}
+	handleError(c, err)
 }

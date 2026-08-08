@@ -38,7 +38,8 @@ export function openRoomSocket(roomId: string, onEvent: (event: RoomEvent) => vo
   const token = localStorage.getItem("this-is-pun-player-token");
   const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
   const socket = new WebSocket(`${protocol}//${window.location.host}/api/v1/rooms/${encodeURIComponent(roomId)}/ws?access_token=${encodeURIComponent(token || "")}`);
+  const heartbeat = window.setInterval(() => { if (socket.readyState === WebSocket.OPEN) socket.send(JSON.stringify({ type: "ping" })); }, 20000);
   socket.addEventListener("message", (event) => { try { onEvent(JSON.parse(event.data) as RoomEvent); } catch { onEvent({ type: "error", payload: "invalid server event" }); } });
-  socket.addEventListener("close", onClose);
+  socket.addEventListener("close", () => { window.clearInterval(heartbeat); onClose(); });
   return socket;
 }

@@ -13,8 +13,9 @@ import (
 )
 
 var (
-	ErrRoomNotFound = errors.New("room not found")
-	ErrRoomExists   = errors.New("room already exists")
+	ErrRoomNotFound    = errors.New("room not found")
+	ErrRoomExists      = errors.New("room already exists")
+	ErrRoomUnavailable = errors.New("room store unavailable")
 )
 
 // RoomRepository 负责 Redis 房间状态读写和并发更新。
@@ -34,7 +35,7 @@ func (r *RoomRepository) Create(ctx context.Context, room entity.Room) error {
 	}
 	ok, err := r.client.SetNX(ctx, roomKey(room.ID), data, r.ttl).Result()
 	if err != nil {
-		return fmt.Errorf("create room: %w", err)
+		return fmt.Errorf("%w: create room: %w", ErrRoomUnavailable, err)
 	}
 	if !ok {
 		return ErrRoomExists
@@ -48,7 +49,7 @@ func (r *RoomRepository) Get(ctx context.Context, roomID string) (entity.Room, e
 		return entity.Room{}, ErrRoomNotFound
 	}
 	if err != nil {
-		return entity.Room{}, fmt.Errorf("get room: %w", err)
+		return entity.Room{}, fmt.Errorf("%w: get room: %w", ErrRoomUnavailable, err)
 	}
 	var room entity.Room
 	if err := json.Unmarshal(data, &room); err != nil {
@@ -68,7 +69,7 @@ func (r *RoomRepository) Update(ctx context.Context, roomID string, mutate func(
 				return ErrRoomNotFound
 			}
 			if err != nil {
-				return fmt.Errorf("watch room: %w", err)
+				return fmt.Errorf("%w: watch room: %w", ErrRoomUnavailable, err)
 			}
 			if err := json.Unmarshal(data, &updated); err != nil {
 				return fmt.Errorf("unmarshal room: %w", err)
