@@ -4,7 +4,7 @@ import GameView from "../views/GameView.vue";
 import PuzzleSelectView from "../views/PuzzleSelectView.vue";
 import ResultView from "../views/ResultView.vue";
 import SettingsView from "../views/SettingsView.vue";
-import AccountView from "../views/AccountView.vue";
+import AccountCenterView from "../views/AccountCenterView.vue";
 import SubmitView from "../views/SubmitView.vue";
 import MySubmissionsView from "../views/MySubmissionsView.vue";
 import WorkshopView from "../views/WorkshopView.vue";
@@ -14,7 +14,7 @@ const router = createRouter({
   routes: [
     { path: "/", name: "home", component: HomeView },
     { path: "/settings", name: "settings", component: SettingsView },
-    { path: "/account", name: "account", component: AccountView },
+    { path: "/account", name: "account", component: AccountCenterView },
     { path: "/puzzles", name: "puzzles", component: PuzzleSelectView },
     { path: "/game", name: "game", component: GameView },
     { path: "/result", name: "result", component: ResultView },
