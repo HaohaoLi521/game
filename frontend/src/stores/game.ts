@@ -107,7 +107,7 @@ export const useGameStore = defineStore("game", {
       }
     },
 
-    async bootstrap(setId?: number) {
+    async bootstrap(setId?: number, puzzleId?: number) {
       this.loading = true;
       this.error = "";
       try {
@@ -122,7 +122,8 @@ export const useGameStore = defineStore("game", {
 
         this.puzzles = await getPuzzlesBySet(selectedSet.id);
         if (!this.puzzles.length) throw new Error("题库里还没有题目");
-        await this.loadPuzzleByIndex(0);
+        const targetIndex = puzzleId ? this.puzzles.findIndex((puzzle) => puzzle.id === puzzleId) : 0;
+        await this.loadPuzzleByIndex(targetIndex >= 0 ? targetIndex : 0);
       } catch (error) {
         this.error = error instanceof Error ? error.message : "加载失败";
       } finally {

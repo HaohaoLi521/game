@@ -183,10 +183,11 @@ const manualAnswer = computed({
 });
 
 watch(
-  () => route.query.set,
-  (set) => {
+  () => [route.query.set, route.query.puzzle],
+  ([set, puzzle]) => {
     const setId = typeof set === "string" ? Number(set) : NaN;
-    void store.bootstrap(Number.isInteger(setId) && setId > 0 ? setId : undefined);
+    const puzzleId = typeof puzzle === "string" ? Number(puzzle) : NaN;
+    void store.bootstrap(Number.isInteger(setId) && setId > 0 ? setId : undefined, Number.isInteger(puzzleId) && puzzleId > 0 ? puzzleId : undefined);
   },
   { immediate: true }
 );

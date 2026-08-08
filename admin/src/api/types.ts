@@ -77,3 +77,11 @@ export interface AdminPuzzle extends PuzzleInput {
   id: number;
   answer_length: number;
 }
+
+export interface ArchivedPuzzle {
+  id: number;
+  puzzle_set_id: number;
+  answer: string;
+  category: string;
+  archived_at: string;
+}

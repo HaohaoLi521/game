@@ -1,5 +1,5 @@
 import { api, type ApiResponse } from "./client";
-import type { AdminPuzzle, AdminUser, PuzzleInput, PuzzleSubmission, SubmissionStatus } from "./types";
+import type { AdminPuzzle, AdminUser, ArchivedPuzzle, PuzzleInput, PuzzleSubmission, SubmissionStatus } from "./types";
 
 export interface AuthResult {
   token: string;
@@ -67,5 +67,15 @@ export async function updatePuzzle(id: number, payload: PuzzleInput) {
 
 export async function deletePuzzle(id: number) {
   const res = await api.delete<ApiResponse<{ deleted: boolean }>>(`/admin/puzzles/${id}`);
+  return res.data.data;
+}
+
+export async function listArchivedPuzzles() {
+  const res = await api.get<ApiResponse<ArchivedPuzzle[]>>("/admin/puzzles/archived");
+  return res.data.data;
+}
+
+export async function restorePuzzle(id: number) {
+  const res = await api.post<ApiResponse<{ restored: boolean; id: number }>>(`/admin/puzzles/${id}/restore`);
   return res.data.data;
 }

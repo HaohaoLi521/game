@@ -162,7 +162,19 @@
             <button type="button" @click="resetPuzzleForm">新增题目</button>
           </div>
 
-          <div class="puzzle-list">
+          <div class="filter-row">
+            <button type="button" :class="{ active: !showArchived }" @click="showArchived = false">鐜版湁棰樼洰</button>
+            <button type="button" :class="{ active: showArchived }" @click="toggleArchived">Archived</button>
+          </div>
+
+          <div v-if="showArchived" class="puzzle-list">
+            <button v-for="puzzle in archivedPuzzles" :key="puzzle.id" type="button" @click="restoreArchived(puzzle.id)">
+              <strong>D {{ puzzle.id }} · {{ puzzle.answer }}</strong>
+              <span>{{ puzzle.category || "Uncategorized" }} · click to restore</span>
+            </button>
+            <p v-if="!archivedPuzzles.length" class="empty-text">No archived puzzles.</p>
+          </div>
+          <div v-else class="puzzle-list">
             <button
               v-for="puzzle in puzzles"
               :key="puzzle.id"
@@ -306,15 +318,17 @@ import {
   approveSubmission,
   createPuzzle,
   deletePuzzle,
+  listArchivedPuzzles,
   listPuzzles,
   listSubmissions,
   loginAdmin,
   logoutAdmin,
   registerAdmin,
   rejectSubmission,
+  restorePuzzle,
   updatePuzzle
 } from "./api/admin";
-import type { AdminPuzzle, AnswerMode, CandidateChar, PuzzleInput, PuzzleSubmission, SubmissionStatus } from "./api/types";
+import type { AdminPuzzle, AnswerMode, ArchivedPuzzle, CandidateChar, PuzzleInput, PuzzleSubmission, SubmissionStatus } from "./api/types";
 
 interface PuzzleForm {
   answer: string;
@@ -345,6 +359,9 @@ const allSubmissions = ref<PuzzleSubmission[]>([]);
 const selected = ref<PuzzleSubmission | null>(null);
 const puzzles = ref<AdminPuzzle[]>([]);
 const selectedPuzzle = ref<AdminPuzzle | null>(null);
+const archivedPuzzles = ref<ArchivedPuzzle[]>([]);
+const showArchived = ref(false);
+const archiveLoading = ref(false);
 const statusFilter = ref<SubmissionStatus | "">("pending");
 const puzzleCount = ref(0);
 const loading = ref(false);
@@ -425,6 +442,33 @@ async function refreshData() {
     if (token.value) {
       error.value = err instanceof Error ? err.message : "加载后台数据失败";
     }
+  }
+}
+
+async function toggleArchived() {
+  showArchived.value = true;
+  if (archivedPuzzles.value.length) return;
+  archiveLoading.value = true;
+  try {
+    archivedPuzzles.value = await listArchivedPuzzles();
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : "Failed to load archived puzzles";
+  } finally {
+    archiveLoading.value = false;
+  }
+}
+
+async function restoreArchived(id: number) {
+  if (archiveLoading.value) return;
+  archiveLoading.value = true;
+  try {
+    await restorePuzzle(id);
+    archivedPuzzles.value = archivedPuzzles.value.filter((item) => item.id !== id);
+    await refreshData();
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : "鎭㈠澶辫触";
+  } finally {
+    archiveLoading.value = false;
   }
 }
 
