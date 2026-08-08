@@ -13,6 +13,7 @@
     <RouterLink class="home-account" to="/account">账户</RouterLink>
 
     <RouterLink class="home-account" style="right: 160px" to="/workshop">工坊</RouterLink>
+    <RouterLink class="home-account" style="right: 90px" to="/rooms">联机</RouterLink>
     <RouterLink class="home-account" style="right: 20px" to="/my-submissions">投稿</RouterLink>
     <section class="home-panel">
       <div class="game-logo" aria-label="这是谐音梗">

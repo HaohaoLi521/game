@@ -48,6 +48,9 @@ func JWTAuthMiddleware(config MiddlewareConfig) gin.HandlerFunc {
 		{
 			authHeader := c.GetHeader("Authorization")
 			if authHeader == "" {
+				authHeader = c.Query("access_token")
+			}
+			if authHeader == "" {
 				c.JSON(http.StatusUnauthorized, gin.H{
 					"code": http.StatusUnauthorized,
 					"msg":  "authorization required",

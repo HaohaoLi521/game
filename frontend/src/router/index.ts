@@ -8,6 +8,8 @@ import AccountCenterView from "../views/AccountCenterView.vue";
 import SubmitView from "../views/SubmitView.vue";
 import MySubmissionsView from "../views/MySubmissionsView.vue";
 import WorkshopView from "../views/WorkshopView.vue";
+import RoomLobbyView from "../views/RoomLobbyView.vue";
+import RoomView from "../views/RoomView.vue";
 
 const router = createRouter({
   history: createWebHistory(),
@@ -21,6 +23,8 @@ const router = createRouter({
     { path: "/submit", name: "submit", component: SubmitView },
     { path: "/my-submissions", name: "my-submissions", component: MySubmissionsView },
     { path: "/workshop", name: "workshop", component: WorkshopView }
+    ,{ path: "/rooms", name: "rooms", component: RoomLobbyView },
+    { path: "/rooms/:id", name: "room", component: RoomView }
   ]
 });
 
