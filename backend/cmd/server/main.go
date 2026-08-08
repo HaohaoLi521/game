@@ -52,6 +52,7 @@ func main() {
 	var puzzleArchiveHandler *handler.PuzzleArchiveHandler
 	var workshopHandler *handler.WorkshopHandler
 	var roomHandler *handler.RoomHandler
+	var rateLimitHandler *handler.RateLimitHandler
 	var readinessDB *gorm.DB
 	var readinessRedis *redis.Client
 	var readinessMedia *minio.Client
@@ -70,6 +71,7 @@ func main() {
 		roomRedis := redis.NewClient(&redis.Options{Addr: redisAddr})
 		readinessRedis = roomRedis
 		roomHandler = handler.NewRoomHandler(service.NewRoomService(model.NewRoomRepository(roomRedis), gameService))
+		rateLimitHandler = handler.NewRateLimitHandler(service.NewRateLimitService(model.NewRateLimitRepository(roomRedis), service.DefaultRateLimitRules()))
 	}
 	if databaseURL != "" && os.Getenv("REDIS_ADDR") != "" {
 		gormDB, err := gorm.Open(postgres.Open(databaseURL), &gorm.Config{})
@@ -114,7 +116,7 @@ func main() {
 		}
 	}
 	readinessHandler := handler.NewReadinessHandler(service.NewReadinessService(model.NewReadinessRepository(readinessDB, readinessRedis, readinessMedia, readinessBucket)))
-	engine := router.NewWithPlayer(gameService, playerHandler, authManager, mediaHandler, playerSubmissionHandler, adminSubmissionHandler, puzzleArchiveHandler, workshopHandler, roomHandler, readinessHandler)
+	engine := router.NewWithPlayer(gameService, playerHandler, authManager, mediaHandler, playerSubmissionHandler, adminSubmissionHandler, puzzleArchiveHandler, workshopHandler, roomHandler, readinessHandler, rateLimitHandler)
 
 	log.Printf("this-is-pun backend listening on :%s", port)
 	if err := engine.Run(":" + port); err != nil {

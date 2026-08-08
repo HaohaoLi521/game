@@ -16,11 +16,11 @@ import (
 )
 
 func New(game *service.GameService) *gin.Engine {
-	return NewWithPlayer(game, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	return NewWithPlayer(game, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 }
 
 // NewWithPlayer 在保留旧游戏路由的基础上注册玩家账户模块。
-func NewWithPlayer(game *service.GameService, player *handler.PlayerHandler, authManager *auth.AuthManager, media *handler.MediaHandler, submissions *handler.PlayerSubmissionHandler, adminSubmissions *handler.AdminSubmissionHandler, archives *handler.PuzzleArchiveHandler, workshop *handler.WorkshopHandler, rooms *handler.RoomHandler, readiness *handler.ReadinessHandler) *gin.Engine {
+func NewWithPlayer(game *service.GameService, player *handler.PlayerHandler, authManager *auth.AuthManager, media *handler.MediaHandler, submissions *handler.PlayerSubmissionHandler, adminSubmissions *handler.AdminSubmissionHandler, archives *handler.PuzzleArchiveHandler, workshop *handler.WorkshopHandler, rooms *handler.RoomHandler, readiness *handler.ReadinessHandler, rateLimiter *handler.RateLimitHandler) *gin.Engine {
 	engine := gin.Default()
 	engine.Use(requestID())
 	engine.Use(cors())
@@ -39,13 +39,23 @@ func NewWithPlayer(game *service.GameService, player *handler.PlayerHandler, aut
 		api.GET("/puzzle-sets/:id/puzzles", h.ListPuzzlesBySet)
 		api.GET("/puzzles/:id", h.GetPuzzle)
 		api.GET("/puzzles/:id/explanation", h.GetExplanation)
-		api.POST("/puzzles/:id/check", h.CheckAnswer)
-		api.POST("/puzzles/:id/hint", h.GetHint)
+		if rateLimiter != nil {
+			api.POST("/puzzles/:id/check", rateLimiter.Middleware("puzzle-answer"), h.CheckAnswer)
+			api.POST("/puzzles/:id/hint", rateLimiter.Middleware("puzzle-answer"), h.GetHint)
+		} else {
+			api.POST("/puzzles/:id/check", h.CheckAnswer)
+			api.POST("/puzzles/:id/hint", h.GetHint)
+		}
 		api.POST("/submissions", h.CreateSubmission)
 		if player != nil && authManager != nil {
 			players := api.Group("/players")
-			players.POST("/register", player.Register)
-			players.POST("/login", player.Login)
+			if rateLimiter != nil {
+				players.POST("/register", rateLimiter.Middleware("player-auth"), player.Register)
+				players.POST("/login", rateLimiter.Middleware("player-auth"), player.Login)
+			} else {
+				players.POST("/register", player.Register)
+				players.POST("/login", player.Login)
+			}
 			players.POST("/refresh", player.Refresh)
 			securedPlayers := players.Group("")
 			securedPlayers.Use(auth.JWTAuthMiddleware(auth.MiddlewareConfig{AuthManager: authManager}))
@@ -115,8 +125,13 @@ func NewWithPlayer(game *service.GameService, player *handler.PlayerHandler, aut
 		if rooms != nil && authManager != nil {
 			securedRooms := api.Group("/rooms")
 			securedRooms.Use(auth.JWTAuthMiddleware(auth.MiddlewareConfig{AuthManager: authManager}))
-			securedRooms.POST("", rooms.Create)
-			securedRooms.POST("/:id/join", rooms.Join)
+			if rateLimiter != nil {
+				securedRooms.POST("", rateLimiter.Middleware("room-action"), rooms.Create)
+				securedRooms.POST("/:id/join", rateLimiter.Middleware("room-action"), rooms.Join)
+			} else {
+				securedRooms.POST("", rooms.Create)
+				securedRooms.POST("/:id/join", rooms.Join)
+			}
 			securedRooms.GET("/:id/ws", rooms.WebSocket)
 		} else {
 			api.Any("/rooms/*path", unavailable("multiplayer"))
