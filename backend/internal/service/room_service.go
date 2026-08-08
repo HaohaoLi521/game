@@ -126,7 +126,7 @@ func (s *RoomService) Ready(ctx context.Context, input ReadyRoomInput) (entity.R
 		player.Ready = true
 		allReady := len(room.Players) > 0
 		for _, item := range room.Players {
-			if !item.Ready {
+			if !item.Present || !item.Ready {
 				allReady = false
 				break
 			}

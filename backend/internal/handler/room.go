@@ -94,7 +94,9 @@ func (h *RoomHandler) WebSocket(c *gin.Context) {
 	h.addConnection(roomID, playerID, client)
 	defer func() {
 		if h.removeConnection(roomID, playerID, client) {
-			_, _ = h.service.Leave(c.Request.Context(), roomID, playerID)
+			if leftRoom, leaveErr := h.service.Leave(c.Request.Context(), roomID, playerID); leaveErr == nil {
+				h.broadcast(roomID, entity.RoomEvent{Type: "player_left", Room: &leftRoom})
+			}
 		}
 		_ = conn.Close()
 	}()
