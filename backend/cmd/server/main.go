@@ -52,17 +52,23 @@ func main() {
 	var puzzleArchiveHandler *handler.PuzzleArchiveHandler
 	var workshopHandler *handler.WorkshopHandler
 	var roomHandler *handler.RoomHandler
+	var readinessDB *gorm.DB
+	var readinessRedis *redis.Client
+	var readinessMedia *minio.Client
+	const readinessBucket = "this-is-pun"
 	if databaseURL != "" {
 		archiveDB, err := gorm.Open(postgres.Open(databaseURL), &gorm.Config{})
 		if err != nil {
 			log.Printf("puzzle archive database unavailable: %v", err)
 		} else {
+			readinessDB = archiveDB
 			puzzleArchiveHandler = handler.NewPuzzleArchiveHandler(service.NewPuzzleArchiveService(model.NewPuzzleArchiveRepository(archiveDB)))
 			workshopHandler = handler.NewWorkshopHandler(service.NewWorkshopService(model.NewWorkshopRepository(archiveDB)))
 		}
 	}
 	if redisAddr := os.Getenv("REDIS_ADDR"); redisAddr != "" {
 		roomRedis := redis.NewClient(&redis.Options{Addr: redisAddr})
+		readinessRedis = roomRedis
 		roomHandler = handler.NewRoomHandler(service.NewRoomService(model.NewRoomRepository(roomRedis), gameService))
 	}
 	if databaseURL != "" && os.Getenv("REDIS_ADDR") != "" {
@@ -92,6 +98,7 @@ func main() {
 					client, e := minio.New(endpoint, &minio.Options{Creds: credentials.NewStaticV4(os.Getenv("MINIO_ACCESS_KEY"), os.Getenv("MINIO_SECRET_KEY"), ""), Secure: false})
 					if e == nil {
 						bucket := "this-is-pun"
+						readinessMedia = client
 						if e = client.MakeBucket(context.Background(), bucket, minio.MakeBucketOptions{}); e != nil {
 							exists, _ := client.BucketExists(context.Background(), bucket)
 							if !exists {
@@ -106,7 +113,8 @@ func main() {
 			}
 		}
 	}
-	engine := router.NewWithPlayer(gameService, playerHandler, authManager, mediaHandler, playerSubmissionHandler, adminSubmissionHandler, puzzleArchiveHandler, workshopHandler, roomHandler)
+	readinessHandler := handler.NewReadinessHandler(service.NewReadinessService(model.NewReadinessRepository(readinessDB, readinessRedis, readinessMedia, readinessBucket)))
+	engine := router.NewWithPlayer(gameService, playerHandler, authManager, mediaHandler, playerSubmissionHandler, adminSubmissionHandler, puzzleArchiveHandler, workshopHandler, roomHandler, readinessHandler)
 
 	log.Printf("this-is-pun backend listening on :%s", port)
 	if err := engine.Run(":" + port); err != nil {

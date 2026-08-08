@@ -1,7 +1,11 @@
 package router
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"net/http"
+	"os"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 
@@ -12,18 +16,24 @@ import (
 )
 
 func New(game *service.GameService) *gin.Engine {
-	return NewWithPlayer(game, nil, nil, nil, nil, nil, nil, nil, nil)
+	return NewWithPlayer(game, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 }
 
 // NewWithPlayer 在保留旧游戏路由的基础上注册玩家账户模块。
-func NewWithPlayer(game *service.GameService, player *handler.PlayerHandler, authManager *auth.AuthManager, media *handler.MediaHandler, submissions *handler.PlayerSubmissionHandler, adminSubmissions *handler.AdminSubmissionHandler, archives *handler.PuzzleArchiveHandler, workshop *handler.WorkshopHandler, rooms *handler.RoomHandler) *gin.Engine {
+func NewWithPlayer(game *service.GameService, player *handler.PlayerHandler, authManager *auth.AuthManager, media *handler.MediaHandler, submissions *handler.PlayerSubmissionHandler, adminSubmissions *handler.AdminSubmissionHandler, archives *handler.PuzzleArchiveHandler, workshop *handler.WorkshopHandler, rooms *handler.RoomHandler, readiness *handler.ReadinessHandler) *gin.Engine {
 	engine := gin.Default()
+	engine.Use(requestID())
 	engine.Use(cors())
 
 	h := handler.NewPuzzleHandler(game)
 	api := engine.Group("/api/v1")
 	{
 		api.GET("/health", h.Health)
+		if readiness != nil {
+			api.GET("/ready", readiness.Check)
+		} else {
+			api.GET("/ready", unavailable("readiness"))
+		}
 		api.GET("/puzzle-sets", h.ListPuzzleSets)
 		api.GET("/puzzle-sets/:id", h.GetPuzzleSet)
 		api.GET("/puzzle-sets/:id/puzzles", h.ListPuzzlesBySet)
@@ -117,14 +127,55 @@ func NewWithPlayer(game *service.GameService, player *handler.PlayerHandler, aut
 }
 
 func cors() gin.HandlerFunc {
+	allowed := configuredOrigins()
 	return func(c *gin.Context) {
-		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+		origin := c.GetHeader("Origin")
+		if allowed["*"] || (origin != "" && allowed[origin]) {
+			c.Writer.Header().Set("Access-Control-Allow-Origin", origin)
+			if origin == "" && allowed["*"] {
+				c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+			}
+			if origin != "" {
+				c.Writer.Header().Add("Vary", "Origin")
+			}
+		}
 		c.Writer.Header().Set("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS")
-		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Request-ID")
 		if c.Request.Method == http.MethodOptions {
 			c.AbortWithStatus(http.StatusNoContent)
 			return
 		}
+		c.Next()
+	}
+}
+
+func configuredOrigins() map[string]bool {
+	result := map[string]bool{}
+	for _, origin := range strings.Split(os.Getenv("CORS_ORIGINS"), ",") {
+		origin = strings.TrimSpace(origin)
+		if origin != "" {
+			result[origin] = true
+		}
+	}
+	if len(result) == 0 {
+		result["*"] = true
+	}
+	return result
+}
+
+func requestID() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		id := strings.TrimSpace(c.GetHeader("X-Request-ID"))
+		if id == "" {
+			var bytes [16]byte
+			if _, err := rand.Read(bytes[:]); err == nil {
+				id = hex.EncodeToString(bytes[:])
+			} else {
+				id = "unknown"
+			}
+		}
+		c.Set("request_id", id)
+		c.Writer.Header().Set("X-Request-ID", id)
 		c.Next()
 	}
 }
