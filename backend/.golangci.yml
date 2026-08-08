@@ -1,0 +1,24 @@
+run:
+  timeout: 5m
+
+linters:
+  enable:
+    - errcheck
+    - govet
+    - ineffassign
+    - staticcheck
+    - unused
+
+issues:
+  exclude-rules:
+    # 这些问题来自 M0/M1 遗留代码，按增量约束暂不改动旧文件。
+    - path: internal/data/postgres_repository\.go
+      linters:
+        - errcheck
+    - path: internal/auth/sso_manager\.go
+      linters:
+        - errcheck
+    - path: internal/auth/middleware\.go
+      text: "func `isLocalRequest` is unused"
+      linters:
+        - unused
