@@ -3,9 +3,11 @@ package router
 import (
 	"crypto/rand"
 	"encoding/hex"
+	"log/slog"
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 
@@ -21,9 +23,11 @@ func New(game *service.GameService) *gin.Engine {
 
 // NewWithPlayer 在保留旧游戏路由的基础上注册玩家账户模块。
 func NewWithPlayer(game *service.GameService, player *handler.PlayerHandler, authManager *auth.AuthManager, media *handler.MediaHandler, submissions *handler.PlayerSubmissionHandler, adminSubmissions *handler.AdminSubmissionHandler, archives *handler.PuzzleArchiveHandler, workshop *handler.WorkshopHandler, rooms *handler.RoomHandler, readiness *handler.ReadinessHandler, rateLimiter *handler.RateLimitHandler) *gin.Engine {
-	engine := gin.Default()
+	engine := gin.New()
+	engine.Use(gin.Recovery())
 	engine.Use(requestID())
 	engine.Use(cors())
+	engine.Use(accessLog())
 
 	h := handler.NewPuzzleHandler(game)
 	api := engine.Group("/api/v1")
@@ -192,6 +196,23 @@ func requestID() gin.HandlerFunc {
 		c.Set("request_id", id)
 		c.Writer.Header().Set("X-Request-ID", id)
 		c.Next()
+	}
+}
+
+// accessLog 记录不含查询参数的 JSON 访问日志，避免把 token 写入日志。
+func accessLog() gin.HandlerFunc {
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	return func(c *gin.Context) {
+		started := time.Now()
+		c.Next()
+		logger.Info("http_request",
+			"request_id", c.GetString("request_id"),
+			"method", c.Request.Method,
+			"path", c.Request.URL.Path,
+			"status", c.Writer.Status(),
+			"latency_ms", time.Since(started).Milliseconds(),
+			"client_ip", c.ClientIP(),
+		)
 	}
 }
 

@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"log"
+	"log/slog"
 	"os"
 	"time"
 
@@ -21,6 +21,7 @@ import (
 )
 
 func main() {
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	port := os.Getenv("BACKEND_PORT")
 	if port == "" {
 		port = "8080"
@@ -32,16 +33,16 @@ func main() {
 	if databaseURL != "" {
 		postgresRepo, err := data.NewPostgresRepository(databaseURL, seed)
 		if err != nil {
-			log.Printf("database unavailable, falling back to in-memory seed data: %v", err)
+			logger.Warn("database_unavailable", "error", err, "fallback", "memory")
 			repo = data.NewMemoryRepository(seed)
 		} else {
 			defer postgresRepo.Close()
 			repo = postgresRepo
-			log.Printf("database connected")
+			logger.Info("database_connected")
 		}
 	} else {
 		repo = data.NewMemoryRepository(seed)
-		log.Printf("DATABASE_URL not set, using in-memory seed data")
+		logger.Warn("database_url_not_set", "fallback", "memory")
 	}
 	gameService := service.NewGameService(repo)
 	var playerHandler *handler.PlayerHandler
@@ -60,7 +61,7 @@ func main() {
 	if databaseURL != "" {
 		archiveDB, err := gorm.Open(postgres.Open(databaseURL), &gorm.Config{})
 		if err != nil {
-			log.Printf("puzzle archive database unavailable: %v", err)
+			logger.Warn("puzzle_archive_database_unavailable", "error", err)
 		} else {
 			readinessDB = archiveDB
 			puzzleArchiveHandler = handler.NewPuzzleArchiveHandler(service.NewPuzzleArchiveService(model.NewPuzzleArchiveRepository(archiveDB)))
@@ -76,15 +77,15 @@ func main() {
 	if databaseURL != "" && os.Getenv("REDIS_ADDR") != "" {
 		gormDB, err := gorm.Open(postgres.Open(databaseURL), &gorm.Config{})
 		if err != nil {
-			log.Printf("player database unavailable: %v", err)
+			logger.Warn("player_database_unavailable", "error", err)
 		} else {
 			playerRepo, err := model.NewPlayerRepository(gormDB)
 			if err != nil {
-				log.Printf("player migration failed: %v", err)
+				logger.Error("player_migration_failed", "error", err)
 			} else {
 				playerSubmissionRepo, migrationErr := model.NewPlayerSubmissionRepository(gormDB)
 				if migrationErr != nil {
-					log.Printf("player submission migration failed: %v", migrationErr)
+					logger.Error("player_submission_migration_failed", "error", migrationErr)
 				} else {
 					playerSubmissionHandler = handler.NewPlayerSubmissionHandler(service.NewPlayerSubmissionService(playerSubmissionRepo, gameService))
 				}
@@ -104,7 +105,7 @@ func main() {
 						if e = client.MakeBucket(context.Background(), bucket, minio.MakeBucketOptions{}); e != nil {
 							exists, _ := client.BucketExists(context.Background(), bucket)
 							if !exists {
-								log.Printf("media bucket unavailable: %v", e)
+								logger.Warn("media_bucket_unavailable", "error", e)
 							}
 						}
 						if repo, e := model.NewMediaAssetRepository(gormDB); e == nil {
@@ -118,8 +119,9 @@ func main() {
 	readinessHandler := handler.NewReadinessHandler(service.NewReadinessService(model.NewReadinessRepository(readinessDB, readinessRedis, readinessMedia, readinessBucket)))
 	engine := router.NewWithPlayer(gameService, playerHandler, authManager, mediaHandler, playerSubmissionHandler, adminSubmissionHandler, puzzleArchiveHandler, workshopHandler, roomHandler, readinessHandler, rateLimitHandler)
 
-	log.Printf("this-is-pun backend listening on :%s", port)
+	logger.Info("backend_listening", "port", port)
 	if err := engine.Run(":" + port); err != nil {
-		log.Fatal(err)
+		logger.Error("backend_stopped", "error", err)
+		os.Exit(1)
 	}
 }
