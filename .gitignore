@@ -8,3 +8,4 @@ frontend/.vite/
 frontend/responsive-*.png
 .tmp/
 .data/
+.workbuddy
